@@ -12,12 +12,17 @@ $000100 [version] array2d-ver
 struct array2d
     array2d int svar numcols
     array2d int svar numrows
-    array2d 0 int sfield data
+    array2d int svar array2d.data
 
 : array2d:  ( numcols numrows -- <name> )  ( -- data )
-  2pfloor 2dup  create  here  array2d sizeof /allot  numcols 2!  * cells /allot ;
+    2pfloor
+    2dup * cells buffer
+        create
+        array2d buffer >r  r@ array2d.data !  r> numcols 2! ;
+: >data  array2d.data @ ;
+
 : dims  ( array2d -- numcols numrows )  numcols 2@ ;
-: count2d ( array2d -- data #cells )  dup data swap numcols 2@ * ;
+: count2d ( array2d -- data #cells )  dup >data swap numcols 2@ * ;
 
 : (clamp)  ( col row array2d -- same )
   >r  0 0 r@ numcols 2@ 2clamp  r> ;
@@ -28,12 +33,12 @@ struct array2d
 : (clip)   ( col row #cols #rows array2d -- same )
   dims 1 1 2- clip ;
 
-: loc2d  ( col row array2d -- addr )
-  (clamp) >r  r@ numcols @ * +  cells  r> data + ;
+: loc  ( col row array2d -- addr )
+  (clamp) >r  r@ numcols @ * +  cells  r> >data + ;
 
 : pitch@  ( array2d -- /pitch strid)  numcols @ cells ;
 
-: addr-pitch  ( col row array2d -- addr /pitch )  dup >r loc2d r> pitch@ ;
+: addr-pitch  ( col row array2d -- addr /pitch )  dup >r loc r> pitch@ ;
 
 : write2d  ( src-addr pitch destcol destrow #cols #rows dest -- )
     locals| dest |
@@ -57,9 +62,6 @@ struct array2d
   >r >r  0  0  r@ dims  r> r> some2d ;
 
 : scan2d>  r> code> scan2d ;
-
-\ : some2d>  r> code> some2d ;
-\ : each2d>  r> code> each2d ;
 
 :noname  cr  cells bounds do  i ?  cell +loop ;
 : 2d.  >r 0 0 r@ dims 16 16 2min  r> literal some2d  ;
